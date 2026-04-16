@@ -1,0 +1,15 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  background: #F7F5F0; /* match the warm paper color */
+}
+
+/* allow body to scroll, root too */
+body { overflow-x: hidden; overflow-y: auto; }
+#root { overflow: visible; height: auto; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #DDD9D2; border-radius: 3px; }
