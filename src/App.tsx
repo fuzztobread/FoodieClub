@@ -2,21 +2,37 @@ import { useState, useEffect } from "react";
 import {
   LineChart, Line, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, Cell
+  ResponsiveContainer, BarChart, Bar, Cell,
+  TooltipProps
 } from "recharts";
+
+// --- TYPES & INTERFACES ---
+interface Post {
+  n: string;
+  live: boolean;
+  sub: string;
+  title: string;
+  upvotes: number | null;
+  comments: number | null;
+  reach: string | null;
+  week: string;
+  insight: string;
+}
+
+type Variant = "live" | "neutral" | "warn";
 
 const C = {
   paper:    "#F7F5F0",
   ink:      "#111010",
-  ink2:     "#3D3B38",
-  ink3:     "#7A7672",
-  rule:     "#DDD9D2",
-  ruleHi:   "#C5C0B8",
-  signal:   "#1A6B3C",
+  ink2:      "#3D3B38",
+  ink3:      "#7A7672",
+  rule:      "#DDD9D2",
+  ruleHi:    "#C5C0B8",
+  signal:    "#1A6B3C",
   signalBg: "#EBF5EE",
-  warn:     "#B04A00",
-  warnBg:   "#FDF0E8",
-  white:    "#FFFFFF",
+  warn:      "#B04A00",
+  warnBg:    "#FDF0E8",
+  white:     "#FFFFFF",
 };
 
 const sentimentData = [
@@ -51,7 +67,7 @@ const searchData = [
   { d: "Now", vol: 441 },
 ];
 
-const posts = [
+const posts: Post[] = [
   {
     n: "01", live: true,
     sub: "r/FrugalFood",
@@ -87,9 +103,9 @@ const posts = [
 ];
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
-const fmt = n => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
+const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 
-const Tooltip_ = ({ active, payload, label }) => {
+const Tooltip_ = ({ active, payload, label }: TooltipProps<number, string>) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
@@ -99,8 +115,8 @@ const Tooltip_ = ({ active, payload, label }) => {
       boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
     }}>
       <p style={{ color: C.ink3, margin: "0 0 6px", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p>
-      {payload.map(p => (
-        <p key={p.name} style={{ color: p.color || C.ink, margin: "3px 0", fontWeight: 500 }}>
+      {payload.map((p, i) => (
+        <p key={i} style={{ color: p.color || C.ink, margin: "3px 0", fontWeight: 500 }}>
           {p.name}: {typeof p.value === "number" ? p.value.toLocaleString() : p.value}
         </p>
       ))}
@@ -108,12 +124,12 @@ const Tooltip_ = ({ active, payload, label }) => {
   );
 };
 
-function Divider({ style = {} }) {
+function Divider({ style = {} }: { style?: React.CSSProperties }) {
   return <div style={{ height: 1, background: C.rule, ...style }} />;
 }
 
-function Tag({ children, variant = "neutral" }) {
-  const styles = {
+function Tag({ children, variant = "neutral" }: { children: React.ReactNode, variant?: Variant }) {
+  const styles: Record<Variant, { bg: string; color: string }> = {
     live:    { bg: C.signalBg, color: C.signal },
     neutral: { bg: "#F0EDE8",  color: C.ink3 },
     warn:    { bg: C.warnBg,   color: C.warn },
@@ -163,7 +179,6 @@ function HeroStats() {
         gridTemplateColumns: "2fr 1fr 1fr 1fr",
         gap: 0,
       }}>
-        {/* Big stat */}
         <div style={{ paddingRight: 40, borderRight: `1px solid ${C.rule}` }}>
           <p style={{
             fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em",
@@ -188,11 +203,10 @@ function HeroStats() {
           </div>
         </div>
 
-        {/* Three supporting stats */}
         {[
           { label: "Positive sentiment", value: "40%", before: "28%", delta: "+12pp", sub: "was 28%", up: true },
           { label: "Negative sentiment", value: "17%", before: "30%", delta: "−13pp", sub: "was 30%", up: true },
-          { label: "Branded search · CA", value: "+30%", before: null, delta: "340→441/day", sub: "no paid spend", up: true },
+          { label: "Branded search · CA", value: "+30%", before: null as string | null, delta: "340→441/day", sub: "no paid spend", up: true },
         ].map((s, i) => (
           <div key={i} style={{
             padding: "0 0 0 32px",
@@ -267,7 +281,7 @@ function SentimentSection() {
         {[
           { label: "Positive", before: "28%", after: "40%", delta: "+12pp", up: true },
           { label: "Negative", before: "30%", after: "17%", delta: "−13pp", up: true },
-          { label: "Neutral",  before: "42%", after: "43%", delta: "+1pp",  up: null },
+          { label: "Neutral",  before: "42%", after: "43%", delta: "+1pp",  up: null as boolean | null },
         ].map((row, i) => (
           <div key={row.label}>
             {i > 0 && <Divider style={{ margin: "16px 0" }} />}
@@ -341,9 +355,7 @@ function ReachSection() {
             <strong style={{ color: C.signal }}>+30%</strong> vs pre-launch (340 → 441/day)
           </p>
         </div>
-
         <Divider />
-
         <div>
           <p style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: C.ink3, margin: "0 0 10px", fontFamily: "'IBM Plex Mono', monospace" }}>
             Engagement rate
@@ -395,9 +407,9 @@ function CampaignArc() {
               {p.live ? (
                 <div style={{ display: "flex", gap: 24 }}>
                   {[
-                    { label: "Upvotes", val: p.upvotes.toLocaleString() },
-                    { label: "Comments", val: p.comments },
-                    { label: "Reach", val: p.reach },
+                    { label: "Upvotes", val: p.upvotes?.toLocaleString() ?? "0" },
+                    { label: "Comments", val: p.comments ?? 0 },
+                    { label: "Reach", val: p.reach ?? "0" },
                   ].map(s => (
                     <div key={s.label} style={{ textAlign: "right" }}>
                       <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.ink, fontFamily: "'Syne', sans-serif" }}>{s.val}</p>
@@ -455,8 +467,13 @@ function WhatsNext() {
   );
 }
 
-// ─── SECTION WRAPPER ─────────────────────────────────────────────────────────
-function Section({ number, title, tag, tagVariant = "live", children }) {
+function Section({ number, title, tag, tagVariant = "live", children }: { 
+  number: string, 
+  title: string, 
+  tag?: string, 
+  tagVariant?: Variant, 
+  children: React.ReactNode 
+}) {
   return (
     <section style={{ borderBottom: `1px solid ${C.rule}` }}>
       <div style={{
@@ -477,7 +494,6 @@ function Section({ number, title, tag, tagVariant = "live", children }) {
   );
 }
 
-// ─── MAIN ────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [visible, setVisible] = useState(false);
   useEffect(() => { setTimeout(() => setVisible(true), 80); }, []);
@@ -495,8 +511,6 @@ export default function Dashboard() {
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 40px 80px" }}>
-
-        {/* MASTHEAD */}
         <header style={{ padding: "36px 0 28px", borderBottom: `2px solid ${C.ink}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
             <div>
@@ -528,28 +542,21 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* SIGNAL BANNER — elevated above hero stats */}
         <SignalBanner />
-
-        {/* HERO STATS */}
         <HeroStats />
 
-        {/* SENTIMENT */}
         <Section number="01" title="Sentiment" tag="+12pp positive in 7 days">
           <SentimentSection />
         </Section>
 
-        {/* REACH */}
         <Section number="02" title="Reach & Engagement" tag="142.8K impressions">
           <ReachSection />
         </Section>
 
-        {/* CAMPAIGN ARC */}
         <Section number="03" title="Campaign arc" tag="1 of 4 published" tagVariant="neutral">
           <CampaignArc />
         </Section>
 
-        {/* WHAT'S NEXT */}
         <section style={{ padding: "32px 0 0" }}>
           <p style={{
             fontSize: 9, textTransform: "uppercase", letterSpacing: "0.14em",
@@ -561,7 +568,6 @@ export default function Dashboard() {
           <WhatsNext />
         </section>
 
-        {/* FOOTER */}
         <footer style={{
           marginTop: 48, paddingTop: 20,
           borderTop: `1px solid ${C.rule}`,
@@ -574,7 +580,6 @@ export default function Dashboard() {
             Generated Apr 14, 2025
           </span>
         </footer>
-
       </div>
     </div>
   );
