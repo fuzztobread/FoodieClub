@@ -83,7 +83,7 @@ const searchData = [
 const posts: Post[] = [
   {
     n: "01", live: true,
-    sub: "r/FrugalFood",
+    sub: "r/san_francisco",
     title: "FoodieClub actually works — here's why",
     upvotes: 712, comments: 94, reach: "41.2K",
     week: "Apr 7–13",
