@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import {
   LineChart, Line, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, Cell,
-  TooltipProps
+  ResponsiveContainer, BarChart, Bar, Cell
 } from "recharts";
 
-// --- TYPES & INTERFACES ---
+// ─── TYPES ───────────────────────────────────────────────────────────────────
+
 interface Post {
   n: string;
   live: boolean;
@@ -19,20 +19,33 @@ interface Post {
   insight: string;
 }
 
-type Variant = "live" | "neutral" | "warn";
+interface TagProps {
+  children: ReactNode;
+  variant?: "live" | "neutral" | "warn";
+}
+
+interface SectionProps {
+  number: string;
+  title: string;
+  tag?: string;
+  tagVariant?: "live" | "neutral" | "warn";
+  children: ReactNode;
+}
+
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
 
 const C = {
   paper:    "#F7F5F0",
   ink:      "#111010",
-  ink2:      "#3D3B38",
-  ink3:      "#7A7672",
-  rule:      "#DDD9D2",
-  ruleHi:    "#C5C0B8",
-  signal:    "#1A6B3C",
+  ink2:     "#3D3B38",
+  ink3:     "#7A7672",
+  rule:     "#DDD9D2",
+  ruleHi:   "#C5C0B8",
+  signal:   "#1A6B3C",
   signalBg: "#EBF5EE",
-  warn:      "#B04A00",
-  warnBg:    "#FDF0E8",
-  white:     "#FFFFFF",
+  warn:     "#B04A00",
+  warnBg:   "#FDF0E8",
+  white:    "#FFFFFF",
 };
 
 const sentimentData = [
@@ -103,9 +116,11 @@ const posts: Post[] = [
 ];
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
+
 const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 
-const Tooltip_ = ({ active, payload, label }: TooltipProps<number, string>) => {
+// Recharts Tooltip custom components work best with 'any' props to avoid complex generic mismatches
+const Tooltip_ = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
@@ -115,7 +130,7 @@ const Tooltip_ = ({ active, payload, label }: TooltipProps<number, string>) => {
       boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
     }}>
       <p style={{ color: C.ink3, margin: "0 0 6px", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p>
-      {payload.map((p, i) => (
+      {payload.map((p: any, i: number) => (
         <p key={i} style={{ color: p.color || C.ink, margin: "3px 0", fontWeight: 500 }}>
           {p.name}: {typeof p.value === "number" ? p.value.toLocaleString() : p.value}
         </p>
@@ -128,8 +143,8 @@ function Divider({ style = {} }: { style?: React.CSSProperties }) {
   return <div style={{ height: 1, background: C.rule, ...style }} />;
 }
 
-function Tag({ children, variant = "neutral" }: { children: React.ReactNode, variant?: Variant }) {
-  const styles: Record<Variant, { bg: string; color: string }> = {
+function Tag({ children, variant = "neutral" }: TagProps) {
+  const styles = {
     live:    { bg: C.signalBg, color: C.signal },
     neutral: { bg: "#F0EDE8",  color: C.ink3 },
     warn:    { bg: C.warnBg,   color: C.warn },
@@ -206,7 +221,7 @@ function HeroStats() {
         {[
           { label: "Positive sentiment", value: "40%", before: "28%", delta: "+12pp", sub: "was 28%", up: true },
           { label: "Negative sentiment", value: "17%", before: "30%", delta: "−13pp", sub: "was 30%", up: true },
-          { label: "Branded search · CA", value: "+30%", before: null as string | null, delta: "340→441/day", sub: "no paid spend", up: true },
+          { label: "Branded search · CA", value: "+30%", before: null, delta: "340→441/day", sub: "no paid spend", up: true },
         ].map((s, i) => (
           <div key={i} style={{
             padding: "0 0 0 32px",
@@ -261,7 +276,7 @@ function SentimentSection() {
               <CartesianGrid stroke={C.rule} vertical={false} />
               <XAxis dataKey="d" tick={{ fill: C.ink3, fontSize: 9, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: C.ink3, fontSize: 9, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} unit="%" width={30} />
-              <Tooltip content={<Tooltip_ />} />
+              <Tooltip content={Tooltip_} />
               <Line type="monotone" dataKey="pos" stroke={C.signal} strokeWidth={2.5} dot={false} name="Positive" />
               <Line type="monotone" dataKey="neu" stroke={C.ruleHi} strokeWidth={1.5} dot={false} name="Neutral" strokeDasharray="4 3" />
               <Line type="monotone" dataKey="neg" stroke={C.warn} strokeWidth={2} dot={false} name="Negative" />
@@ -281,7 +296,7 @@ function SentimentSection() {
         {[
           { label: "Positive", before: "28%", after: "40%", delta: "+12pp", up: true },
           { label: "Negative", before: "30%", after: "17%", delta: "−13pp", up: true },
-          { label: "Neutral",  before: "42%", after: "43%", delta: "+1pp",  up: null as boolean | null },
+          { label: "Neutral",  before: "42%", after: "43%", delta: "+1pp",  up: null },
         ].map((row, i) => (
           <div key={row.label}>
             {i > 0 && <Divider style={{ margin: "16px 0" }} />}
@@ -316,7 +331,7 @@ function ReachSection() {
               <CartesianGrid stroke={C.rule} vertical={false} />
               <XAxis dataKey="d" tick={{ fill: C.ink3, fontSize: 9, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: C.ink3, fontSize: 9, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} />
-              <Tooltip content={<Tooltip_ />} cursor={{ fill: `${C.rule}60` }} />
+              <Tooltip content={Tooltip_} cursor={{ fill: `${C.rule}60` }} />
               <Bar dataKey="imp" name="Impressions" radius={[2, 2, 0, 0]}>
                 {reachData.map((entry, i) => (
                   <Cell key={i} fill={entry.d === "Fri" ? C.ink : C.ruleHi} />
@@ -346,7 +361,7 @@ function ReachSection() {
                 </defs>
                 <XAxis dataKey="d" tick={{ fill: C.ink3, fontSize: 8, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} />
                 <YAxis hide domain={[300, "auto"]} />
-                <Tooltip content={<Tooltip_ />} />
+                <Tooltip content={Tooltip_} />
                 <Area type="monotone" dataKey="vol" stroke={C.signal} strokeWidth={2} fill="url(#sg)" name="Search vol." dot={false} />
               </AreaChart>
             </ResponsiveContainer>
@@ -355,7 +370,9 @@ function ReachSection() {
             <strong style={{ color: C.signal }}>+30%</strong> vs pre-launch (340 → 441/day)
           </p>
         </div>
+
         <Divider />
+
         <div>
           <p style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: C.ink3, margin: "0 0 10px", fontFamily: "'IBM Plex Mono', monospace" }}>
             Engagement rate
@@ -467,13 +484,7 @@ function WhatsNext() {
   );
 }
 
-function Section({ number, title, tag, tagVariant = "live", children }: { 
-  number: string, 
-  title: string, 
-  tag?: string, 
-  tagVariant?: Variant, 
-  children: React.ReactNode 
-}) {
+function Section({ number, title, tag, tagVariant = "live", children }: SectionProps) {
   return (
     <section style={{ borderBottom: `1px solid ${C.rule}` }}>
       <div style={{
@@ -511,6 +522,7 @@ export default function Dashboard() {
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 40px 80px" }}>
+
         <header style={{ padding: "36px 0 28px", borderBottom: `2px solid ${C.ink}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
             <div>
